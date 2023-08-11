@@ -53,7 +53,7 @@ func init() {
 		py.MustNewMethod("max", builtin_max, 0, max_doc),
 		py.MustNewMethod("min", builtin_min, 0, min_doc),
 		py.MustNewMethod("next", builtin_next, 0, next_doc),
-		py.MustNewMethod("open", builtin_open, 0, open_doc),
+		// py.MustNewMethod("open", builtin_open, 0, open_doc),
 		py.MustNewMethod("oct", builtin_oct, 0, oct_doc),
 		py.MustNewMethod("ord", builtin_ord, 0, ord_doc),
 		py.MustNewMethod("pow", builtin_pow, 0, pow_doc),

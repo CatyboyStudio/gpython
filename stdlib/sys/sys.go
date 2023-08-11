@@ -632,7 +632,7 @@ func init() {
 		py.MustNewMethod("displayhook", sys_displayhook, 0, displayhook_doc),
 		py.MustNewMethod("exc_info", sys_exc_info, 0, exc_info_doc),
 		py.MustNewMethod("excepthook", sys_excepthook, 0, excepthook_doc),
-		py.MustNewMethod("exit", sys_exit, 0, exit_doc),
+		// py.MustNewMethod("exit", sys_exit, 0, exit_doc),
 		py.MustNewMethod("getdefaultencoding", sys_getdefaultencoding, 0, getdefaultencoding_doc),
 		py.MustNewMethod("getfilesystemencoding", sys_getfilesystemencoding, 0, getfilesystemencoding_doc),
 		py.MustNewMethod("getrefcount", sys_getrefcount, 0, getrefcount_doc),
@@ -661,10 +661,12 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	executable = ""
 
 	globals := py.StringDict{
-		"path":       py.NewList(),
-		"argv":       py.NewListFromStrings(os.Args[1:]),
+		"path": py.NewList(),
+		"argv": py.NewListFromStrings([]string{}),
+		// "argv":       py.NewListFromStrings(os.Args[1:]),
 		"stdin":      stdin,
 		"stdout":     stdout,
 		"stderr":     stderr,

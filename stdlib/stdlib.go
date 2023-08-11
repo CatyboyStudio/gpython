@@ -20,12 +20,14 @@ import (
 
 	_ "github.com/go-python/gpython/stdlib/binascii"
 	_ "github.com/go-python/gpython/stdlib/builtin"
-	_ "github.com/go-python/gpython/stdlib/glob"
+
+	// _ "github.com/go-python/gpython/stdlib/glob"
 	_ "github.com/go-python/gpython/stdlib/math"
-	_ "github.com/go-python/gpython/stdlib/os"
+	// _ "github.com/go-python/gpython/stdlib/os"
 	_ "github.com/go-python/gpython/stdlib/string"
 	_ "github.com/go-python/gpython/stdlib/sys"
-	_ "github.com/go-python/gpython/stdlib/tempfile"
+
+	// _ "github.com/go-python/gpython/stdlib/tempfile"
 	_ "github.com/go-python/gpython/stdlib/time"
 )
 
@@ -235,32 +237,34 @@ func resolveRunPath(runPath string, opts py.CompileOpts, pathObjs []py.Object, t
 		cont = true
 	)
 
-	for _, pathObj := range pathObjs {
-		pathStr, ok := pathObj.(py.String)
-		if !ok {
-			continue
-		}
+	if len(pathObjs) == 0 {
+		for _, pathObj := range pathObjs {
+			pathStr, ok := pathObj.(py.String)
+			if !ok {
+				continue
+			}
 
-		// If an absolute path, just try that.
-		// Otherwise, check from the passed current dir then check from the current working dir.
-		fpath := path.Join(string(pathStr), runPath)
-		if filepath.IsAbs(fpath) {
-			cont, err = tryPath(fpath)
-		} else {
-			if len(opts.CurDir) > 0 {
-				subPath := path.Join(opts.CurDir, fpath)
-				cont, err = tryPath(subPath)
-			}
-			if cont && err == nil {
-				if cwd == "" {
-					cwd, _ = os.Getwd()
+			// If an absolute path, just try that.
+			// Otherwise, check from the passed current dir then check from the current working dir.
+			fpath := path.Join(string(pathStr), runPath)
+			if filepath.IsAbs(fpath) {
+				cont, err = tryPath(fpath)
+			} else {
+				if len(opts.CurDir) > 0 {
+					subPath := path.Join(opts.CurDir, fpath)
+					cont, err = tryPath(subPath)
 				}
-				subPath := path.Join(cwd, fpath)
-				cont, err = tryPath(subPath)
+				if cont && err == nil {
+					if cwd == "" {
+						cwd, _ = os.Getwd()
+					}
+					subPath := path.Join(cwd, fpath)
+					cont, err = tryPath(subPath)
+				}
 			}
-		}
-		if !cont {
-			break
+			if !cont {
+				break
+			}
 		}
 	}
 
