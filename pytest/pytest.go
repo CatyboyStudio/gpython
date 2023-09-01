@@ -230,8 +230,10 @@ func (task *Task) run() error {
 	}
 	defer out.Close()
 
-	sys.Globals["stdout"] = &py.File{File: out, FileMode: py.FileWrite}
-	sys.Globals["stderr"] = &py.File{File: out, FileMode: py.FileWrite}
+	if sys == nil {
+		// sys.Globals["stdout"] = &py.File{File: out, FileMode: py.FileWrite}
+		// sys.Globals["stderr"] = &py.File{File: out, FileMode: py.FileWrite}
+	}
 
 	if task.PyFile != "" {
 		_, err := py.RunFile(ctx, task.PyFile, py.CompileOpts{}, nil)

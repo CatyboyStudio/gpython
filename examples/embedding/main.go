@@ -7,6 +7,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	// This initializes gpython for runtime execution and is essential.
 	// It defines forward-declared symbols and registers native built-in modules, such as sys and time.
@@ -26,7 +27,7 @@ func main() {
 func runWithFile(pyFile string) error {
 
 	// See type Context interface and related docs
-	ctx := py.NewContext(py.DefaultContextOpts())
+	ctx := py.NewContextWithFS(py.DefaultContextOpts(), os.DirFS("./"))
 
 	// This drives modules being able to perform cleanup and release resources
 	defer ctx.Close()

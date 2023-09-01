@@ -4,6 +4,8 @@
 
 package py
 
+import "io/fs"
+
 type CompileMode string
 
 const (
@@ -68,7 +70,7 @@ type CompileOut struct {
 // DefaultCoreSysPaths specify default search paths for module sys
 // This can be changed during runtime and plays nice with others using DefaultContextOpts()
 var DefaultCoreSysPaths = []string{
-	".",
+	// ".",
 	"lib",
 }
 
@@ -76,9 +78,9 @@ var DefaultCoreSysPaths = []string{
 // This can be changed during runtime and plays nice with others using DefaultContextOpts()
 // They are separated from the default core paths since they the more likley thing you will want to completely replace when using gpython.
 var DefaultAuxSysPaths = []string{
-	"/usr/lib/python3.4",
-	"/usr/local/lib/python3.4/dist-packages",
-	"/usr/lib/python3/dist-packages",
+	// "/usr/lib/python3.4",
+	// "/usr/local/lib/python3.4/dist-packages",
+	// "/usr/lib/python3/dist-packages",
 }
 
 // ContextOpts specifies fundamental environment and input settings for creating a new py.Context
@@ -101,6 +103,8 @@ var (
 	// NewContext is a high-level call to create a new gpython interpreter context.
 	// See type Context interface.
 	NewContext func(opts ContextOpts) Context
+
+	NewContextWithFS func(opts ContextOpts, fs fs.FS) Context
 
 	// Compiles a python buffer into a py.Code object.
 	// Returns a py.Code object or otherwise an error.

@@ -8,6 +8,7 @@ package stdlib
 
 import (
 	"bytes"
+	"io/fs"
 	"os"
 	"path"
 	"path/filepath"
@@ -34,6 +35,8 @@ import (
 func init() {
 	// Assign the base-level py.Context creation function while also preventing an import cycle.
 	py.NewContext = NewContext
+
+	py.NewContextWithFS = NewContextWithFS
 }
 
 // context implements interface py.Context
@@ -45,28 +48,15 @@ type context struct {
 	closed    bool
 	running   sync.WaitGroup
 	done      chan struct{}
+
+	fs fs.FS
 }
 
 // NewContext creates a new gpython interpreter instance context.
 //
 // See interface py.Context defined in py/run.go
 func NewContext(opts py.ContextOpts) py.Context {
-	ctx := &context{
-		opts:    opts,
-		done:    make(chan struct{}),
-		closing: false,
-		closed:  false,
-	}
-
-	ctx.store = py.NewModuleStore()
-
-	py.Import(ctx, "builtins", "sys")
-
-	sys_mod := ctx.Store().MustGetModule("sys")
-	sys_mod.Globals["argv"] = py.NewListFromStrings(opts.SysArgs)
-	sys_mod.Globals["path"] = py.NewListFromStrings(opts.SysPaths)
-
-	return ctx
+	return NewContextWithFS(opts, nil)
 }
 
 // ModuleInit digests a ModuleImpl, compiling and marshalling as needed, creating a new Module instance in this Context.
@@ -128,18 +118,22 @@ func (ctx *context) ResolveAndCompile(pathname string, opts py.CompileOpts) (py.
 
 	err = resolveRunPath(pathname, opts, tryPaths, func(fpath string) (bool, error) {
 
-		stat, err := os.Stat(fpath)
+		if ctx.fs == nil {
+			return true, nil
+		}
+
+		stat, err := fs.Stat(ctx.fs, fpath)
 		if err == nil && stat.IsDir() {
 			// FIXME this is a massive simplification!
 			fpath = path.Join(fpath, "__init__.py")
-			_, err = os.Stat(fpath)
+			_, err = fs.Stat(ctx.fs, fpath)
 		}
 
 		ext := strings.ToLower(filepath.Ext(fpath))
 		if ext == "" && os.IsNotExist(err) {
 			fpath += ".py"
 			ext = ".py"
-			_, err = os.Stat(fpath)
+			_, err = fs.Stat(ctx.fs, fpath)
 		}
 
 		// Keep searching while we get FNFs, stop on an error
@@ -154,7 +148,7 @@ func (ctx *context) ResolveAndCompile(pathname string, opts py.CompileOpts) (py.
 		switch ext {
 		case ".py":
 			var pySrc []byte
-			pySrc, err = os.ReadFile(fpath)
+			pySrc, err = fs.ReadFile(ctx.fs, fpath)
 			if err != nil {
 				return false, py.ExceptionNewf(py.OSError, "Error reading %q: %v", fpath, err)
 			}
@@ -165,7 +159,7 @@ func (ctx *context) ResolveAndCompile(pathname string, opts py.CompileOpts) (py.
 			}
 			out.SrcPathname = fpath
 		case ".pyc":
-			file, err := os.Open(fpath)
+			file, err := ctx.fs.Open(fpath)
 			if err != nil {
 				return false, py.ExceptionNewf(py.OSError, "Error opening %q: %v", fpath, err)
 			}
@@ -237,7 +231,9 @@ func resolveRunPath(runPath string, opts py.CompileOpts, pathObjs []py.Object, t
 		cont = true
 	)
 
-	if len(pathObjs) == 0 {
+	cont, err = tryPath(runPath)
+
+	if cont {
 		for _, pathObj := range pathObjs {
 			pathStr, ok := pathObj.(py.String)
 			if !ok {
@@ -251,7 +247,10 @@ func resolveRunPath(runPath string, opts py.CompileOpts, pathObjs []py.Object, t
 				cont, err = tryPath(fpath)
 			} else {
 				if len(opts.CurDir) > 0 {
-					subPath := path.Join(opts.CurDir, fpath)
+					subPath := fpath
+					if opts.CurDir != "." {
+						subPath = path.Join(opts.CurDir, fpath)
+					}
 					cont, err = tryPath(subPath)
 				}
 				if cont && err == nil {

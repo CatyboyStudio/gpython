@@ -12,3 +12,4 @@ cover.out
 # tests
 stdlib/builtin/testfile
 examples/embedding/embedding
+/.vscode

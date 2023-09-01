@@ -195,6 +195,9 @@ func builtin_print(self py.Object, args py.Tuple, kwargs py.StringDict) (py.Obje
 		return nil, err
 	}
 	stdout := sysModule.Globals["stdout"]
+	if stdout == nil {
+		stdout = py.None
+	}
 	kwlist := []string{"sep", "end", "file", "flush"}
 	err = py.ParseTupleAndKeywords(nil, kwargs, "|ssOO:print", kwlist, &sepObj, &endObj, &stdout, &flush)
 	if err != nil {
@@ -530,68 +533,6 @@ returns package A when fromlist is empty, but its submodule B when
 fromlist is not empty.  Level is used to determine whether to perform 
 absolute or relative imports. 0 is absolute while a positive number
 is the number of parent directories to search relative to the current module.`
-
-const open_doc = `open(name[, mode[, buffering]]) -> file object
-
-Open a file using the file() type, returns a file object.  This is the
-preferred way to open a file.  See file.__doc__ for further information.`
-
-func builtin_open(self py.Object, args py.Tuple, kwargs py.StringDict) (py.Object, error) {
-	kwlist := []string{
-		"file",
-		"mode",
-		"buffering",
-		"encoding",
-		"errors",
-		"newline",
-		"closefd",
-		"opener",
-	}
-
-	var (
-		filename  py.Object
-		mode      py.Object = py.String("r")
-		buffering py.Object = py.Int(-1)
-		encoding  py.Object = py.None
-		errors    py.Object = py.None
-		newline   py.Object = py.None
-		closefd   py.Object = py.Bool(true)
-		opener    py.Object = py.None
-	)
-
-	err := py.ParseTupleAndKeywords(args, kwargs, "s|sizzzpO:open", kwlist,
-		&filename,
-		&mode,
-		&buffering,
-		&encoding,
-		&errors,
-		&newline,
-		&closefd,
-		&opener)
-	if err != nil {
-		return nil, err
-	}
-
-	if encoding != py.None && encoding.(py.String) != py.String("utf-8") {
-		return nil, py.ExceptionNewf(py.NotImplementedError, "encoding not implemented yet")
-	}
-
-	if errors != py.None {
-		return nil, py.ExceptionNewf(py.NotImplementedError, "errors not implemented yet")
-	}
-
-	if newline != py.None {
-		return nil, py.ExceptionNewf(py.NotImplementedError, "newline not implemented yet")
-	}
-
-	if opener != py.None {
-		return nil, py.ExceptionNewf(py.NotImplementedError, "opener not implemented yet")
-	}
-
-	return py.OpenFile(string(filename.(py.String)),
-		string(mode.(py.String)),
-		int(buffering.(py.Int)))
-}
 
 const oct_doc = `oct(number) -> string
 
